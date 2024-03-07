@@ -95,7 +95,10 @@ def run_benchmark(
     try:
         # run warm up inference
         for i in range(2):
-            llm.predict({"inputs": "This is a sample sentence to warm up the model"})
+            llm.predict({
+                "inputs": "This is a sample sentence to warm up the model",
+                "parameters": {"max_new_tokens": 50, "top_k": 50, "top_p": 0.95, "do_sample": True},
+            })
 
         # run k6 load test
         time.sleep(10)
