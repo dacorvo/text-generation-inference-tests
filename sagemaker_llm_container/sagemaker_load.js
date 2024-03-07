@@ -11,6 +11,7 @@ const INFERENCE_COMPONENT = __ENV.INFERENCE_COMPONENT || undefined;
 const REGION = __ENV.AWS_REGION || 'us-east-1';
 const AWS_ACCESS_KEY_ID = __ENV.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = __ENV.AWS_SECRET_ACCESS_KEY;
+const AWS_SESSION_TOKEN = __ENV.AWS_SESSION_TOKEN;
 const doSample = __ENV.DO_SAMPLE || '0';
 const vu = __ENV.VU || 1;
 
@@ -22,6 +23,7 @@ const awsConfig = new AWSConfig({
   region: REGION,
   accessKeyId: AWS_ACCESS_KEY_ID,
   secretAccessKey: AWS_SECRET_ACCESS_KEY,
+  sessionToken: AWS_SESSION_TOKEN,
 });
 
 const samples = new SharedArray('ShareGPT samples', function () {
@@ -53,7 +55,7 @@ export default function () {
   // Load ShareGPT random example
   const sample = "Write a 500 word long story about llamas";
 
-  // Create Body 
+  // Create Body
   const payload = {
     inputs: sample,
     parameters: {
@@ -80,6 +82,7 @@ export default function () {
     credentials: {
       accessKeyId: awsConfig.accessKeyId,
       secretAccessKey: awsConfig.secretAccessKey,
+      sessionToken: awsConfig.sessionToken,
     },
   });
 
@@ -105,7 +108,6 @@ export default function () {
     uriEscapePath: false,
     applyChecksum: false,
   });
-
 
   const res = http.post(signedRequest.url, signedRequest.body, { headers: signedRequest.headers });
 
