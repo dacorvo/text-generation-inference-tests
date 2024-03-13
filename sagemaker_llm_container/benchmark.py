@@ -15,7 +15,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="A simple argument parser example")
     parser.add_argument("--model_id", default=None, type=str)
     parser.add_argument("--iam_role", default="sagemaker_execution_role", type=str)
-    parser.add_argument("--tp_degree", type=int)
+    parser.add_argument("--tp_degree", type=int, default=1)
     parser.add_argument("--instance_type", type=str)
     parser.add_argument("--token", type=str, default=None)
     parser.add_argument("--vu", type=int, default=1)
