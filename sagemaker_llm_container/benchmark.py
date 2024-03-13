@@ -133,7 +133,7 @@ def run_benchmark(
             f"{model_id.split('/')[-1]}_{instance_type}_tp_{int(tp_degree)}_vu_{int(vu)}.json",
             "w",
         ) as f:
-            f.write(json.dumps(results))
+            f.write(json.dumps(results, indent=2))
     except Exception as e:
         print(e)
     # finally:
