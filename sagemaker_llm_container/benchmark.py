@@ -37,6 +37,8 @@ def run_benchmark(
     quantize,
     endpoint_name=None,
     inference_component=None,
+    batch_size=None,
+    sequence_length=None,
 ):
     start = time.time()
     iam = boto3.client("iam")
@@ -57,21 +59,30 @@ def run_benchmark(
             endpoint_name=endpoint_name, component_name=inference_component
         )
     else:
-        # retrieve the llm image uri
-        llm_image = get_huggingface_llm_image_uri("huggingface", version="1.0.3")
         # TGI config
         config = {
             "HF_MODEL_ID": model_id,  # model_id from hf.co/models
-            "SM_NUM_GPUS": json.dumps(tp_degree),  # Number of GPU used per replica
-            "MAX_INPUT_LENGTH": json.dumps(1024),  # Max length of input text
-            "MAX_TOTAL_TOKENS": json.dumps(
-                2048
-            ),  # Max length of the generation (including input text)
             "HUGGING_FACE_HUB_TOKEN": token,
         }
         if quantize:
             config["HF_MODEL_QUANTIZE"] = "gptq"
-
+        if batch_size is not None:
+            # NeuronX model with static batch_size and sequence_length
+            llm_image = get_huggingface_llm_image_uri("huggingface-neuronx", version="0.0.20")
+            config["MAX_BATCH_SIZE"] = json.dumps(batch_size)
+            config["MAX_INPUT_LENGTH"] = json.dumps(sequence_length // 2)
+            config["MAX_TOTAL_TOKENS"] = json.dumps(sequence_length)
+            config["HF_BATCH_SIZE"] = json.dumps(batch_size)
+            config["HF_SEQUENCE_LENGTH"] = json.dumps(sequence_length)
+            config["HF_AUTO_CAST_TYPE"] = "fp16"
+            config["HF_NUM_CORES"] = json.dumps(tp_degree)
+        else:
+            config["MAX_INPUT_LENGTH"] = json.dumps(2048),  # Max length of input text
+            config["MAX_TOTAL_TOKENS"] = json.dumps(4096),  # Max length of the generation (including input text)
+            config["SM_NUM_GPUS"] = json.dumps(tp_degree)  # Number of GPU used per replica
+            # retrieve the llm GPU image uri
+            llm_image = get_huggingface_llm_image_uri("huggingface", version="1.0.3")
+        print(f"Using {llm_image} for deployment")
         # create HuggingFaceModel
         llm_model = HuggingFaceModel(role=role, image_uri=llm_image, env=config)
 
@@ -80,13 +91,15 @@ def run_benchmark(
             llm = llm_model.deploy(
                 initial_instance_count=1,
                 instance_type=instance_type,
-                container_startup_health_check_timeout=300,
+                container_startup_health_check_timeout=3600,
+                volume_size=512,
             )
         except Exception as e:
             print(e)
             print(
                 f"Failed to deploy model with config {model_id}, {instance_type}, {tp_degree}, {vu}"
             )
+        print(f"Succesfully deployed model with config {model_id}, {instance_type}, {tp_degree}, {vu}")
 
     # get endpoint region and credentials
     endpoint_region = llm.sagemaker_session._region_name
@@ -131,18 +144,19 @@ def run_benchmark(
         )
 
         # print results
-        with open(
-            f"{model_id.split('/')[-1]}_{instance_type}_tp_{int(tp_degree)}_vu_{int(vu)}.json",
-            "w",
-        ) as f:
+        basename = f"{model_id.split('/')[-1]}_{instance_type}_tp_{int(tp_degree)}_vu_{int(vu)}"
+        if batch_size is not None:
+            basename = f"{basename}_bs{batch_size}_seqlen{sequence_length}"
+        with open(f"{basename}.json", "w") as f:
             f.write(json.dumps(results, indent=2))
     except Exception as e:
         print(e)
-    # finally:
-    #     # delete endpoint
-    #     llm.delete_model()
-    #     llm.delete_endpoint()
-    #     print(f"Total time: {round(time.time() - start)}s")
+
+    if not endpoint_name and llm is not None:
+        # delete endpoint
+        print("Deleting endpoint")
+        llm.delete_model()
+        llm.delete_endpoint()
 
 
 if __name__ == "__main__":
@@ -163,6 +177,15 @@ if __name__ == "__main__":
 
         for config in configs:
             for vu in vu_group:
+                batch_size = config.get("batch_size", None)
+                sequence_length = config.get("sequence_length", None)
+                if batch_size is not None:
+                    if batch_size > vu:
+                        print(f"Skipping test for vu {vu} which is < batch size {batch_size}")
+                        continue
+                    if vu > 2 * batch_size:
+                        print(f"Skipping test for vu {vu} which is > 2 * batch size {batch_size}")
+                        continue
                 run_benchmark(
                     iam_role=args.iam_role,
                     token=args.token,
@@ -171,6 +194,8 @@ if __name__ == "__main__":
                     tp_degree=config["tp_degree"],
                     vu=vu,
                     quantize="gptq" if "quantize" in config else None,
+                    batch_size=batch_size,
+                    sequence_length=sequence_length,
                 )
 
     else:
