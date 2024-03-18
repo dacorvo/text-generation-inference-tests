@@ -1,6 +1,6 @@
 {
   "Host": "sagemaker",
-  "Model Id": "meta-llama/Llama-2-70b-chat-hf",
+  "Model Id": "meta-llama/Llama-2-70b-hf",
   "Instance": "ml.inf2.48xlarge",
   "Tensor parallelism degree": 24,
   "quantization": "none",
