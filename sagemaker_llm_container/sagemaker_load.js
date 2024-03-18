@@ -44,7 +44,7 @@ export const options = {
     // },
     test: {
       executor: 'constant-vus',
-      duration: '90s',
+      duration: '180s',
       vus: vu,
     },
   },
@@ -61,7 +61,7 @@ export default function () {
     parameters: {
       details: true,
       // max_new_tokens: sample[2],
-      max_new_tokens: 50,
+      max_new_tokens: 500,
     },
   };
   if (doSample === '1') {

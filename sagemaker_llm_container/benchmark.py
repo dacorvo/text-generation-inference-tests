@@ -126,6 +126,8 @@ def run_benchmark(
             quantize=quantize,
             model_id=model_id,
             inference_component=inference_component,
+            duration=180,
+            num_gen_tokens=500,
         )
 
         # print results

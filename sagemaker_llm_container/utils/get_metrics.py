@@ -64,6 +64,8 @@ def get_metrics_from_cloudwatch(
     quantize=None,
     model_id=None,
     inference_component=None,
+    duration=None,
+    num_gen_tokens=None,
 ):
     client = boto3.client("logs")
 
@@ -97,7 +99,10 @@ def get_metrics_from_cloudwatch(
 
     df = pd.DataFrame.from_records(metrics)
 
-    throughput_gen_per_s = calculate_throughput(df["total_time_ms"].mean(), int(vu))
+    throughput_gen_per_s = calculate_throughput(df["total_time_ms"].mean(),
+                                                int(vu),
+                                                duration=duration,
+                                                num_gen_tokens=num_gen_tokens)
 
     # get quantization
     if quantize:
@@ -112,7 +117,7 @@ def get_metrics_from_cloudwatch(
         "Instance": instance_type,
         "Tensor parallelism degree": int(tp_degree),
         "quantization": quantization,
-        "generated_tokens per request": 50,
+        "generated_tokens per request": num_gen_tokens,
         "Do Sample": True,
         "Number of requests": len(df),
         "Virtual Users": int(vu),
