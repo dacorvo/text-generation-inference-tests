@@ -183,9 +183,6 @@ if __name__ == "__main__":
                     if batch_size > vu:
                         print(f"Skipping test for vu {vu} which is < batch size {batch_size}")
                         continue
-                    if vu > 2 * batch_size:
-                        print(f"Skipping test for vu {vu} which is > 2 * batch size {batch_size}")
-                        continue
                 run_benchmark(
                     iam_role=args.iam_role,
                     token=args.token,
