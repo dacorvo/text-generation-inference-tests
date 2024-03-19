@@ -48,10 +48,8 @@ def extract_metrics(input_string):
     return parsed_kpis
 
 
-def calculate_throughput(avg_latency, user_count, duration=90, num_gen_tokens=50):
-    request_per_user_in_duration = ((duration * 1000) / avg_latency) * user_count
-    throughput = (request_per_user_in_duration / duration) * num_gen_tokens
-    return throughput
+def calculate_throughput(requests, duration, num_gen_tokens):
+    return requests * num_gen_tokens / duration
 
 
 def get_metrics_from_cloudwatch(
@@ -99,8 +97,9 @@ def get_metrics_from_cloudwatch(
 
     df = pd.DataFrame.from_records(metrics)
 
-    throughput_gen_per_s = calculate_throughput(df["total_time_ms"].mean(),
-                                                int(vu),
+    requests = len(df)
+
+    throughput_gen_per_s = calculate_throughput(requests,
                                                 duration=duration,
                                                 num_gen_tokens=num_gen_tokens)
 
@@ -119,8 +118,9 @@ def get_metrics_from_cloudwatch(
         "quantization": quantization,
         "generated_tokens per request": num_gen_tokens,
         "Do Sample": True,
-        "Number of requests": len(df),
+        "Number of requests": requests,
         "Virtual Users": int(vu),
+        "Duration (s)": int(duration),
         "Throughput (tokens/second)": throughput_gen_per_s,
         "Latency (ms/token) avg": df["time_per_token_ms"].mean(),
         "Latency (ms/token) min": df["time_per_token_ms"].min(),
