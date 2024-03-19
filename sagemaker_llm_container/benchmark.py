@@ -116,12 +116,26 @@ def run_benchmark(
         # run k6 load test
         time.sleep(10)
         benchmark_start_time = time.time()
-        command = f"k6 run sagemaker_load.js -e ENDPOINT_NAME={llm.endpoint_name} -e REGION={endpoint_region} -e DO_SAMPLE=0 -e VU={vu} -e AWS_ACCESS_KEY_ID={credentials.access_key} -e AWS_SECRET_ACCESS_KEY={credentials.secret_key}"
+        command = "k6 run sagemaker_load.js " \
+                  f"-e ENDPOINT_NAME={llm.endpoint_name} " \
+                  f"-e REGION={endpoint_region} " \
+                  f"-e DO_SAMPLE=0 -e VU={vu} " \
+                  f"-e AWS_ACCESS_KEY_ID={credentials.access_key} " \
+                  f"-e AWS_SECRET_ACCESS_KEY={credentials.secret_key} "
 
         if inference_component:
             command += f" -e INFERENCE_COMPONENT={inference_component}"
 
         os.system(command)
+
+        # Read results to get the actual duration, number of requests, failures
+        with open("summary.json") as f:
+            results = json.load(f)
+            checks = results["root_group"]["checks"][0]
+            passes = checks["passes"]
+            fails = checks["fails"]
+            print(f"Requests completed/failed : {passes}/{fails}")
+            duration = results["state"]["testRunDurationMs"] / 1000
 
         # wait for cloudwatch logs to be populated and ready to read
         print("Waiting for cloudwatch logs to be populated")
@@ -139,7 +153,7 @@ def run_benchmark(
             quantize=quantize,
             model_id=model_id,
             inference_component=inference_component,
-            duration=180,
+            duration=duration,
             num_gen_tokens=500,
         )
 
