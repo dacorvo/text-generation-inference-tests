@@ -44,7 +44,7 @@ export const options = {
     // },
     test: {
       executor: 'constant-vus',
-      duration: '180s',
+      duration: '300s',
       vus: vu,
     },
   },
