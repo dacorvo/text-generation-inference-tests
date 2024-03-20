@@ -8,6 +8,7 @@
   "Do Sample": true,
   "Number of requests": 324,
   "Virtual Users": 5,
+  "Duration (s)": 90,
   "Throughput (tokens/second)": 189.6363316924556,
   "Latency (ms/token) avg": 28.231818827160488,
   "Latency (ms/token) min": 17.51411,
