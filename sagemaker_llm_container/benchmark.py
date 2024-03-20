@@ -190,6 +190,7 @@ if __name__ == "__main__":
         )
 
         for config in configs:
+            vu_group = config.get("vu_group")
             for vu in vu_group:
                 batch_size = config.get("batch_size", None)
                 sequence_length = config.get("sequence_length", None)
