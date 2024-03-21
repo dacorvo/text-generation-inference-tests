@@ -29,7 +29,13 @@ configs:
   batch_size: 8
   sequence_length: 4096
   tp_degree: 24
-  vu_group: [10, 20]
+  vu_group: [10]
+- model_id: meta-llama/Llama-2-7b-hf
+  instance_type: ml.inf2.48xlarge
+  batch_size: 16
+  sequence_length: 4096
+  tp_degree: 24
+  vu_group: [20]
 # 13B Model
 - model_id: meta-llama/Llama-2-13b-hf
   instance_type: ml.inf2.48xlarge
